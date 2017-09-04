@@ -1124,8 +1124,8 @@ class TestQuantity(unittest.TestCase):
         """
 
         self.assertAlmostEqual(self.product_energy_2.value, 37.68)
-        self.assertEqual(self.product_energy_2.units, 'N*ft')
-        self.assertEqual(self.Force_scalar.return_compounded_units(self.Temp_scalar), 'N*K')
+        self.assertEqual(self.product_energy_2.units, 'ft*N')
+        self.assertEqual(self.Force_scalar.return_compounded_units(self.Temp_scalar), 'K*N')
 
     def test_multiplicative_uncertainty(self):
         """
@@ -1138,3 +1138,16 @@ class TestQuantity(unittest.TestCase):
         # Test Mixed Uncertainty Types
         self.assertEqual(self.product_energy_1.uncertainty, 0.223606797749979)
         self.assertEqual(self.product_energy_1.uncertaintyType, '*|/')  # Always returns '*|/' type
+
+    def test_simplify_units(self):
+        """
+        Test that simplify_units is able to handle various unit operations
+        """
+
+        self.assertEqual(quantity.simplify_units('N'), 'N')
+        self.assertEqual(quantity.simplify_units('N**2'), 'N^2.0')
+        self.assertEqual(quantity.simplify_units('(N*m)'), 'm*N')
+        self.assertEqual(quantity.simplify_units('(N*m)**2*K'), 'K*m^2.0*N^2.0')
+        self.assertEqual(quantity.simplify_units('m*(N*m)**3/N**2/K'), 'K^-1.0*m^4.0*N')
+        self.assertEqual(quantity.simplify_units('m*kcal*(m**4/K/m**5)**2/kcal/(kcal**2)'), 'K^-2.0*m^-1.0*kcal^-2.0')
+        self.assertEqual(quantity.simplify_units('m*ft'), 'ft*m')
