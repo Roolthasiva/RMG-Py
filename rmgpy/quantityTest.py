@@ -1139,6 +1139,15 @@ class TestQuantity(unittest.TestCase):
         self.assertEqual(self.product_energy_1.uncertainty, 0.223606797749979)
         self.assertEqual(self.product_energy_1.uncertaintyType, '*|/')  # Always returns '*|/' type
 
+    def test_scalar_quantity_division(self):
+        """
+        Test that scalar quantities can be divided successfully
+        """
+
+        self.scalar_division_test = self.Force_scalar/self.Length_scalar3
+        self.assertAlmostEqual(self.scalar_division_test.value, 0.12)
+        self.assertEqual(self.scalar_division_test.units, 'm^-1.0*N')
+
     def test_simplify_units(self):
         """
         Test that simplify_units is able to handle various unit operations
