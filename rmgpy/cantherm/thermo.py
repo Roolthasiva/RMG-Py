@@ -249,8 +249,10 @@ class ThermoJob(object):
 
         fig.subplots_adjust(left=0.10, bottom=0.08, right=0.95, top=0.95, wspace=0.35, hspace=0.20)
 
-        if not os.path.exists('plots'):
-            os.mkdir('plots')
+        plt_path = os.path.join(outputDirectory, 'plots')
+
+        if not os.path.exists(plt_path):
+            os.mkdir(plt_path)
         valid_chars = "-_.()<=> %s%s" % (string.ascii_letters, string.digits)
         filename = os.path.join('plots', ''.join(c for c in self.species.label if c in valid_chars) + '.pdf')
         plt.savefig(os.path.join(outputDirectory, filename))
