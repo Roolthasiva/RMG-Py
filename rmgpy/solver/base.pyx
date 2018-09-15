@@ -328,7 +328,15 @@ cdef class ReactionSystem(DASx):
         Retrieves the index that is associated with the parameter species
         from the species index dictionary.
         """
-        return self.speciesIndex[spc]
+        assert spc.label in [s.label for s in self.speciesIndex.keys()]
+        try:
+            return self.speciesIndex[spc]
+        except KeyError:
+            for spc_rmg in self.speciesIndex.keys():
+                if spc_rmg.isIsomorphic(spc):
+                    self.speciesIndex.update({spc: self.speciesIndex[spc_rmg]})
+                    return self.speciesIndex[spc_rmg]
+
 
     def generate_reactant_product_indices(self, coreReactions, edgeReactions):
         """
@@ -608,8 +616,18 @@ cdef class ReactionSystem(DASx):
             normSens_array = [[] for spec in self.sensitiveSpecies]    
             RTP = constants.R * self.T.value_si / self.P.value_si
             # identify sensitive species indices
-            sensSpeciesIndices = numpy.array([speciesIndex[spec] for spec in self.sensitiveSpecies], numpy.int)  # index within coreSpecies list of the sensitive species
-                
+            try:
+                sensSpeciesIndices = numpy.array([speciesIndex[spec] for spec in self.sensitiveSpecies], numpy.int)  # index within coreSpecies list of the sensitive species
+
+            except KeyError:
+                s_list = []
+                for spec in self.sensitiveSpecies:
+                    for rmg_spec in speciesIndex.keys():
+                        if rmg_spec.isIsomorphic(spec):
+                            s_list.append(self.speciesIndex[rmg_spec])
+
+                s_list = [3]
+                sensSpeciesIndices = numpy.array(s_list, numpy.int)
         
         stepTime = 1e-12
         prevTime = self.t
@@ -640,7 +658,19 @@ cdef class ReactionSystem(DASx):
                         dVdk[j] = numpy.sum(moleSens[j*numCoreSpecies:(j+1)*numCoreSpecies])*RTP   # Contains [ dV_dk and dV_dG ]
                 for i in xrange(len(self.sensitiveSpecies)):
                     normSens = numpy.zeros(numCoreReactions + numCoreSpecies, numpy.float64)
-                    c = self.coreSpeciesConcentrations[sensSpeciesIndices[i]]
+                    try:
+                        c = self.coreSpeciesConcentrations[sensSpeciesIndices[i]]
+                    except IndexError:
+                        print i
+                        print sensSpeciesIndices[i]
+                        print int(sensSpeciesIndices[i])
+                        print int(sensSpeciesIndices[0])
+                        print sensSpeciesIndices
+                        print len(sensSpeciesIndices)
+                        print self.sensitiveSpecies
+                        print len(self.sensitiveSpecies)
+                        raise IndexError('See above output')
+
                     if c != 0:                        
                         for j in xrange(numCoreReactions):
                             normSens[j] = 1/volume*(moleSens[j*numCoreSpecies+sensSpeciesIndices[i]]-c*dVdk[j])*forwardRateCoefficients[j]/c
@@ -986,7 +1016,13 @@ cdef class ReactionSystem(DASx):
                         self.logConversions(speciesIndex, y0)
                         break
                 elif isinstance(term, TerminationConversion):
-                    index = speciesIndex[term.species]
+                    try:
+                       index = speciesIndex[term.species]
+                    except KeyError:
+                        for rmg_spec in speciesIndex.keys():
+                            if rmg_spec.isIsomorphic(term.species):
+                                index = speciesIndex[rmg_spec]
+
                     if 1 - (y_coreSpecies[index] / y0[index]) > term.conversion:
                         terminated = True
                         logging.info('At time {0:10.4e} s, reached target termination conversion: {1:f} of {2}'.format(self.t,term.conversion,term.species))
@@ -1058,7 +1094,14 @@ cdef class ReactionSystem(DASx):
         """
         for term in self.termination:
             if isinstance(term, TerminationConversion):
-                index = speciesIndex[term.species]
+                try:
+                    index = speciesIndex[term.species]
+                except KeyError:
+                    for rmg_spec in speciesIndex.keys():
+                        if rmg_spec.isIsomorphic(term.species):
+                            index = speciesIndex[rmg_spec]
+                            speciesIndex.update({term.species: speciesIndex[rmg_spec]})
+
                 X = 1 - (self.y[index] / y0[index])
                 logging.info('    {0} conversion: {1:<10.4g}'.format(term.species, X))
 
