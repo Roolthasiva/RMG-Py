@@ -1160,6 +1160,7 @@ def assign_frequency_scale_factor(freq_level):
                  'hf/6-31+g(d,p)': 0.915 * 1.014,  # [1] Table 7
                  'pm3': 0.940 * 1.014,  # [1] Table 7, the 0.940 value is the ZPE scale factor
                  'pm6': 1.078 * 1.014,  # [1] Table 7, the 1.078 value is the ZPE scale factor
+                 'b3lypd3_htt': 0.999,  # [4]
                  'b3lyp/6-31g(d,p)': 0.961,  # [2]
                  'b3lyp/6-311g(d,p)': 0.967,  # [2]
                  'b3lyp/6-311+g(3df,2p)': 0.967,  # [2]
