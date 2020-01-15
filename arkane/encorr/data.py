@@ -76,6 +76,12 @@ atom_energies = {
     # Note: If your model chemistry does not include spin orbit coupling, you should add the corrections
     # to the energies here
 
+    'b3lypd3_htt': {
+        'H': -0.502154224100 + SOC['H'], 'N': -54.6039773856 + SOC['N'], 'O': -75.0962752574 + SOC['O'],
+        'C': -37.8594780924 + SOC['C'], 'P': 0, 'S': -398.132374203 + SOC['S'], 'Cl': -460.166978744 + SOC['Cl'], 
+        'F': -99.7701500623 + SOC['F'], 'Br': 0,
+    },
+
     'wb97m-v/def2-tzvpd': {
         'H': -0.4941110259 + SOC['H'],
         'C': -37.8458797086 + SOC['C'],
@@ -340,6 +346,14 @@ atom_energies = {
 
 # Petersson-type bond additivity correction parameters
 pbac = {
+    'b3lypd3_htt': {
+        'C-H': 0, 'C-C': 0, 'C=C': 0, 'C#C': 0,
+        'O-H': 0, 'C-O': 0, 'C=O': 0, 'O-O': 0, 'C-N': 0,
+        'C=N': 0, 'C#N': 0, 'N-O': 0, 'N_O': 0, 'N=O': 0,
+        'N-H': 0, 'N-N': 0, 'N=N': 0, 'N#N': 0, 'S-H': 0,
+        'C-S': 0, 'C=S': 0, 'S-S': 0, 'O-S': 0, 'O=S': 0,
+        'O=S=O': 0
+    },
 
     # 'S-H', 'C-S', 'C=S', 'S-S', 'O-S', 'O=S', 'O=S=O' taken from http://hdl.handle.net/1721.1/98155 (both for
     # 'CCSD(T)-F12/cc-pVDZ-F12' and 'CCSD(T)-F12/cc-pVTZ-F12')
