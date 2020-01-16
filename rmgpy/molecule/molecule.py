@@ -1348,8 +1348,8 @@ class Molecule(Graph):
             except AtomTypeError:
                 if log_species:
                     logging.error("Could not update atomtypes for this molecule:\n{0}".format(self.to_adjacency_list()))
-                if raise_exception:
-                    raise
+                #if raise_exception:
+                #    raise
                 atom.atomtype = ATOMTYPES['R']
 
     def update_multiplicity(self):
