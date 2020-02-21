@@ -47,10 +47,15 @@ from collections import deque
 
 from lpsolve55 import lpsolve, EQ, LE
 import numpy as np
-import pyomo.environ as pyo
 
 from rmgpy.molecule import Molecule
 from rmgpy.quantity import ScalarQuantity
+
+# Optional Imports
+try:
+    import pyomo.environ as pyo
+except ImportError:
+    pyo = None
 
 
 class ErrorCancelingSpecies:
@@ -293,6 +298,11 @@ class ErrorCancelingScheme:
         solution = None
 
         if milp_software == 'pyomo':
+            # Check that pyomo is available
+            if not pyo:
+                raise ImportError('Can not import optional package pyomo. Either install this dependency with '
+                                  '`conda install -c conda-forge pyomo coincbc glpk` or set milp_software to `lpsolve`')
+
             # Setup the MILP problem using pyomo
             lp_model = pyo.ConcreteModel()
             lp_model.i = pyo.RangeSet(0, m - 1)

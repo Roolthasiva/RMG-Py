@@ -188,6 +188,12 @@ class TestErrorCancelingScheme(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        try:
+            import pyomo as pyo
+        except ImportError:
+            pyo = None
+        cls.pyo = pyo
+
         cls.propene = ErrorCancelingSpecies(Molecule(smiles='CC=C'), (100, 'kJ/mol'), 'test', (105, 'kJ/mol'))
         cls.propane = ErrorCancelingSpecies(Molecule(smiles='CCC'), (75, 'kJ/mol'), 'test', (80, 'kJ/mol'))
         cls.butane = ErrorCancelingSpecies(Molecule(smiles='CCCC'), (150, 'kJ/mol'), 'test', (145, 'kJ/mol'))
@@ -221,10 +227,11 @@ class TestErrorCancelingScheme(unittest.TestCase):
         self.assertEqual(rxn.species[self.propane], 1)
         self.assertEqual(rxn.species[self.butene], 1)
 
-        rxn, _ = scheme._find_error_canceling_reaction([0, 1, 2], milp_software='pyomo')
-        self.assertEqual(rxn.species[self.butane], -1)
-        self.assertEqual(rxn.species[self.propane], 1)
-        self.assertEqual(rxn.species[self.butene], 1)
+        if self.pyo:
+            rxn, _ = scheme._find_error_canceling_reaction([0, 1, 2], milp_software='pyomo')
+            self.assertEqual(rxn.species[self.butane], -1)
+            self.assertEqual(rxn.species[self.propane], 1)
+            self.assertEqual(rxn.species[self.butene], 1)
 
     def test_multiple_error_canceling_reactions(self):
         """
@@ -241,11 +248,12 @@ class TestErrorCancelingScheme(unittest.TestCase):
         rxn_str2 = '<ErrorCancelingReaction 1.0*C=CC + 1.0*CCCC == 1.0*C=CCC + 1.0*CCC >'
         self.assertTrue(any(rxn_string in reaction_string for rxn_string in [rxn_str1, rxn_str2]))
 
-        # pyomo is slower, so don't test as many
-        reaction_list = scheme.multiple_error_canceling_reaction_search(n_reactions_max=5, milp_software='pyomo')
-        self.assertEqual(len(reaction_list), 5)
-        reaction_string = reaction_list.__repr__()
-        self.assertTrue(any(rxn_string in reaction_string for rxn_string in [rxn_str1, rxn_str2]))
+        if self.pyo:
+            # pyomo is slower, so don't test as many
+            reaction_list = scheme.multiple_error_canceling_reaction_search(n_reactions_max=5, milp_software='pyomo')
+            self.assertEqual(len(reaction_list), 5)
+            reaction_string = reaction_list.__repr__()
+            self.assertTrue(any(rxn_string in reaction_string for rxn_string in [rxn_str1, rxn_str2]))
 
     def test_calculate_target_enthalpy(self):
         """
@@ -258,8 +266,9 @@ class TestErrorCancelingScheme(unittest.TestCase):
         self.assertEqual(target_thermo.value_si, 115000.0)
         self.assertIsInstance(rxn_list[0], ErrorCancelingReaction)
 
-        target_thermo, _ = scheme.calculate_target_enthalpy(n_reactions_max=3, milp_software='pyomo')
-        self.assertEqual(target_thermo.value_si, 115000.0)
+        if self.pyo:
+            target_thermo, _ = scheme.calculate_target_enthalpy(n_reactions_max=3, milp_software='pyomo')
+            self.assertEqual(target_thermo.value_si, 115000.0)
 
 
 if __name__ == '__main__':
