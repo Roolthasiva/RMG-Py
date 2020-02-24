@@ -438,7 +438,7 @@ class ReferenceDatabase(object):
         """
         self.reference_sets = {}
 
-    def load(self, paths=''):
+    def load(self, paths='', ignore_incomplete=True):
         """
         Load one or more set of reference species and append it on to the database
 
@@ -447,6 +447,7 @@ class ReferenceDatabase(object):
                 species to be loaded into the database. The string should point to the folder that has the name of the
                 reference set. The name of sub-folders in a reference set directory should be indices starting from 0
                 and should contain a YAML file that defines the ReferenceSpecies object of that index, named {index}.yml
+            ignore_incomplete (bool): If ``True`` only species with both reference and calculated data will be added.
         """
         if not paths:  # Default to the main reference set in RMG-database
             paths = [REFERENCE_DB_PATH]
@@ -467,10 +468,12 @@ class ReferenceDatabase(object):
                 ref_spcs.load_yaml(os.path.join(path, spcs))
                 molecule = Molecule().from_adjacency_list(ref_spcs.adjacency_list, raise_atomtype_exception=False, 
                                                           raise_charge_exception=False)
-                if (len(ref_spcs.calculated_data) == 0) or (len(ref_spcs.reference_data) == 0):
-                    logging.warning('Molecule {0} from reference set `{1}` does not have any reference data and/or '
-                                    'calculated data. This entry will not be added'.format(ref_spcs.smiles, set_name))
-                    continue
+                if ignore_incomplete:
+                    if (len(ref_spcs.calculated_data) == 0) or (len(ref_spcs.reference_data) == 0):
+                        logging.warning('Molecule {0} from reference set `{1}` does not have any reference data and/or '
+                                        'calculated data. This entry will not be added'.format(ref_spcs.smiles,
+                                                                                               set_name))
+                        continue
                 # perform isomorphism checks to prevent duplicate species
                 for mol in molecule_list:
                     if molecule.is_isomorphic(mol):
