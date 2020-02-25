@@ -399,6 +399,8 @@ class CalculatedDataEntry(RMGObject):
                 self._thermo_data = value
             else:
                 raise ValueError('thermo_data for a CalculatedDataEntry object must be an rmgpy ThermoData object')
+        else:
+            self._thermo_data = None
 
     @property
     def electronic_energy(self):
@@ -412,6 +414,8 @@ class CalculatedDataEntry(RMGObject):
             else:
                 raise ValueError('electronic_energy for a CalculatedDataEntry object must be an rmgpy ScalarQuantity '
                                  'object')
+        else:
+            self._electronic_energy = None
 
     @property
     def unscaled_freqs(self):
@@ -425,6 +429,8 @@ class CalculatedDataEntry(RMGObject):
             else:
                 raise ValueError('unscaled_freqs for a CalculatedDataEntry object must be an rmgpy ArrayQuantity '
                                  'object')
+        else:
+            self._unscaled_freqs = None
 
 
 class ReferenceDatabase(object):
