@@ -107,7 +107,7 @@ class TestReferenceSpecies(unittest.TestCase):
         label = 'test_reference_species'
         ref_spcs = ReferenceSpecies(species=self.ethane, label=label)
         self.assertEqual(ref_spcs.label, label)
-        ref_spcs.save_yaml(path=os.path.join(FILE_DIR, 'data'))
+        ref_spcs.save_yaml(path=os.path.join(FILE_DIR, 'data', 'species'))
 
         loaded_ref = ReferenceSpecies.__new__(ReferenceSpecies)
         load_path = os.path.join(FILE_DIR, 'data', 'species', '{0}.yml'.format(label))

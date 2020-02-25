@@ -35,6 +35,7 @@ This module defines the ReferenceSpecies class, which are used in isodesmic reac
 
 import logging
 import os
+import string
 from collections import namedtuple
 
 import yaml
@@ -48,6 +49,10 @@ from rmgpy.quantity import ArrayQuantity, ScalarQuantity
 from rmgpy.rmgobject import RMGObject
 from rmgpy.species import Species
 from rmgpy.thermo import ThermoData
+
+
+# Module level constants
+REFERENCE_DB_PATH = os.path.join(settings['database.directory'], 'reference_sets/main')
 
 
 class ReferenceSpecies(ArkaneSpecies):
@@ -141,6 +146,19 @@ class ReferenceSpecies(ArkaneSpecies):
         else:
             raise ValueError('Calculated data must be given as a dictionary of the model chemistry (string) and '
                              'associated CalculatedDataEntry object')
+
+    def save_yaml(self, path=REFERENCE_DB_PATH):
+        """
+        Save the reference species to a .yml file
+        """
+        if not os.path.exists(os.path.join(os.path.abspath(path), '')):
+            os.mkdir(os.path.join(os.path.abspath(path), ''))
+        valid_chars = "-_.()<=>+ %s%s" % (string.ascii_letters, string.digits)
+        filename = os.path.join(''.join(c for c in self.label if c in valid_chars) + '.yml')
+        full_path = os.path.join(path, filename)
+        with open(full_path, 'w') as f:
+            yaml.dump(data=self.as_dict(), stream=f)
+        logging.debug('Dumping species {0} data as {1}'.format(self.label, filename))
 
     def load_yaml(self, path, label=None, pdep=False):
         """
@@ -430,7 +448,7 @@ class ReferenceDatabase(object):
                 and should contain a YAML file that defines the ReferenceSpecies object of that index, named {index}.yml
         """
         if not paths:  # Default to the main reference set in RMG-database
-            paths = [os.path.join(settings['database.directory'], 'reference_sets/main')]
+            paths = [REFERENCE_DB_PATH]
 
         if isinstance(paths, str):  # Convert to a list with one element
             paths = [paths]
