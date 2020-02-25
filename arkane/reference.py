@@ -93,7 +93,8 @@ class ReferenceSpecies(ArkaneSpecies):
             elif inchi:
                 species = Species(inchi=inchi)
             elif adjacency_list:
-                species = Species().from_adjacency_list(adjacency_list)
+                species = Species().from_adjacency_list(adjacency_list, raise_atomtype_exception=False,
+                                                        raise_charge_exception=False)
             else:
                 raise ValueError('Either an rmgpy species object, smiles string, InChI string, or an adjacency list '
                                  'must be given to create a ReferenceSpecies object')
@@ -464,7 +465,8 @@ class ReferenceDatabase(object):
                     continue
                 ref_spcs = ReferenceSpecies.__new__(ReferenceSpecies)
                 ref_spcs.load_yaml(os.path.join(path, spcs))
-                molecule = Molecule().from_adjacency_list(ref_spcs.adjacency_list)
+                molecule = Molecule().from_adjacency_list(ref_spcs.adjacency_list, raise_atomtype_exception=False, 
+                                                          raise_charge_exception=False)
                 if (len(ref_spcs.calculated_data) == 0) or (len(ref_spcs.reference_data) == 0):
                     logging.warning('Molecule {0} from reference set `{1}` does not have any reference data and/or '
                                     'calculated data. This entry will not be added'.format(ref_spcs.smiles, set_name))
