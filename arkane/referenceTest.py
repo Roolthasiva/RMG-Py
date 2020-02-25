@@ -38,8 +38,8 @@ import shutil
 
 from arkane.isodesmic import ErrorCancelingSpecies
 from arkane.reference import ReferenceSpecies, ReferenceDataEntry, CalculatedDataEntry, ReferenceDatabase
+from rmgpy.quantity import ArrayQuantity, ScalarQuantity
 from rmgpy.species import Species
-from rmgpy.statmech import Conformer
 from rmgpy.thermo import ThermoData
 
 
@@ -59,6 +59,10 @@ class TestReferenceSpecies(unittest.TestCase):
         cls.propane = Species(smiles='CCC')
 
         cls.thermo_data = ThermoData(H298=(100.0, 'kJ/mol'), S298=(100.0, 'J/(mol*K)'))
+        cls.xyz_dict = {'symbols': ('H', 'H'), 'isotopes': (1, 1), 'coords': ((0.0, 0.0, 0.0), (0.708, 0.0, 0.0))}
+        cls.unscaled_freqs = ArrayQuantity([3000.0], 'cm^-1')
+        cls.electronic_energy = ScalarQuantity(10.0, 'J/mol')
+        cls.t1_diagnostic = 0.101
 
     def test_instantiate_reference_species(self):
         """
@@ -129,14 +133,15 @@ class TestReferenceSpecies(unittest.TestCase):
         """
         Test that the CalculatedDataEntry class functions properly and enforces the standard for storing data
         """
-        data_entry = CalculatedDataEntry(Conformer(), self.thermo_data)
+        data_entry = CalculatedDataEntry(self.thermo_data, xyz_dict=self.xyz_dict, unscaled_freqs=self.unscaled_freqs,
+                                         electronic_energy=self.electronic_energy, t1_diagnostic=self.t1_diagnostic)
         self.assertEqual(data_entry.thermo_data.H298.value_si, 100000.0)
+        self.assertIsInstance(data_entry.xyz_dict, dict)
+        self.assertIsInstance(data_entry.unscaled_freqs, ArrayQuantity)
+        self.assertAlmostEqual(data_entry.electronic_energy.value, 10.0)
 
-        with self.assertRaises(ValueError):
-            CalculatedDataEntry({'xyz': '0 0 0'}, self.thermo_data)
-
-        with self.assertRaises(ValueError):
-            CalculatedDataEntry(Conformer(), {'H298': (100.0, 'kJ/mol')})
+        data_entry_minimal = CalculatedDataEntry(self.thermo_data)
+        self.assertIsInstance(data_entry_minimal.thermo_data, ThermoData)
 
 
 class TestReferenceDatabase(unittest.TestCase):
@@ -180,8 +185,8 @@ class TestReferenceDatabase(unittest.TestCase):
         ref_data_1 = ReferenceDataEntry(ThermoData(H298=(100, 'kJ/mol', '+|-', 2)))
         ref_data_2 = ReferenceDataEntry(ThermoData(H298=(25, 'kcal/mol', '+|-', 1)))
 
-        calc_data_1 = CalculatedDataEntry(Conformer(), ThermoData(H298=(110, 'kJ/mol')))
-        calc_data_2 = CalculatedDataEntry(Conformer(), ThermoData(H298=(120, 'kJ/mol')))
+        calc_data_1 = CalculatedDataEntry(ThermoData(H298=(110, 'kJ/mol')))
+        calc_data_2 = CalculatedDataEntry(ThermoData(H298=(120, 'kJ/mol')))
 
         ethane = ReferenceSpecies(smiles='CC',
                                   reference_data={'precise': ref_data_1, 'less_precise': ref_data_2},

@@ -39,13 +39,14 @@ from collections import namedtuple
 
 import yaml
 
-from arkane.common import ArkaneSpecies, ARKANE_CLASS_DICT
+from arkane.common import ArkaneSpecies, ARKANE_CLASS_DICT, symbol_by_number
 from arkane.isodesmic import ErrorCancelingSpecies
+from arkane.util import read_supporting_information
 from rmgpy import settings
 from rmgpy.molecule import Molecule
+from rmgpy.quantity import ArrayQuantity, ScalarQuantity
 from rmgpy.rmgobject import RMGObject
 from rmgpy.species import Species
-from rmgpy.statmech import Conformer
 from rmgpy.thermo import ThermoData
 
 
@@ -164,7 +165,7 @@ class ReferenceSpecies(ArkaneSpecies):
 
         self.make_object(data, class_dict)
 
-    def update_from_arkane_spcs(self, arkane_species):
+    def update_from_arkane_spcs(self, arkane_species, supporting_info_path=None):
         """
         Add in calculated data from an existing ArkaneSpecies object.
 
@@ -174,10 +175,31 @@ class ReferenceSpecies(ArkaneSpecies):
 
         Args:
             arkane_species (ArkaneSpecies):  Matching Arkane species that was run at the desired model chemistry
+            supporting_info_path (str): Path to 'supporting_information.csv' for the species, which is used to read in
+                the unscaled frequencies, electronic energy, and T1 diagnostic if they exist
         """
-        conformer = arkane_species.conformer
         thermo_data = arkane_species.thermo_data
-        calc_data = CalculatedDataEntry(conformer, thermo_data)
+        # Only store H298 and S298 data
+        thermo_data.Cpdata = None
+        thermo_data.Tdata = None
+
+        conformer = arkane_species.conformer
+        symbols = [symbol_by_number[n] for n in conformer.number.value]
+        isotopes = [int(round(m)) for m in conformer.mass.value]
+        coords = conformer.coordinates.value
+        xyz_dict = {'symbols': symbols, 'isotopes': isotopes, 'coords': coords}
+
+        unscaled_freqs = None
+        electronic_energy = None
+        t1_diagnostic = None
+        if supporting_info_path:
+            supporting_info = read_supporting_information(supporting_info_path)
+            unscaled_freqs = supporting_info['Calculated Frequencies (unscaled and prior to projection, cm^-1)']
+            electronic_energy = supporting_info['Electronic energy (J/mol)']
+            t1_diagnostic = supporting_info['T1 diagnostic']
+
+        calc_data = CalculatedDataEntry(thermo_data=thermo_data, xyz_dict=xyz_dict, unscaled_freqs=unscaled_freqs,
+                                        electronic_energy=electronic_energy, t1_diagnostic=t1_diagnostic)
         self.calculated_data[arkane_species.level_of_theory] = calc_data
 
     def to_error_canceling_spcs(self, model_chemistry, source=None):
@@ -278,7 +300,7 @@ class ReferenceSpecies(ArkaneSpecies):
             ArrayQuantity
         """
         if self.default_xyz_chemistry:
-            return self.calculated_data[self.default_xyz_chemistry].conformer.coordinates
+            return self.calculated_data[self.default_xyz_chemistry].xyz_dict
         else:
             raise ValueError('The default model chemistry to use for XYZ coordinates has not been set '
                              'for {0}'.format(self))
@@ -322,40 +344,30 @@ class CalculatedDataEntry(RMGObject):
     A class for storing a single entry of statistical mechanical and thermochemistry information calculated at a single
     model chemistry or level of theory
     """
-    def __init__(self, conformer, thermo_data, t1_diagnostic=None, fod=None):
+    def __init__(self, thermo_data, xyz_dict=None, unscaled_freqs=None, electronic_energy=None, t1_diagnostic=None,
+                 fod=None):
         """
 
         Args:
-            conformer (rmgpy.statmech.Conformer): Conformer object generated from an Arkane job. Stores many pieces of
-                information gained from quantum chemistry calculations, including coordinates, frequencies etc.
             thermo_data (rmgpy.thermo.ThermoData): Actual thermochemistry values calculated using statistical mechanics
                 at select points. Arkane fits a heat capacity model to this data
+            xyz_dict (dict): An ARC style xyz dictionary for the cartesian coordinates
+            unscaled_freqs (np.array): Unscaled harmonic frequencies
+            electronic_energy (ScalarQuantity): The electronic single point energy
             t1_diagnostic (float): T1 diagnostic for coupled cluster calculations to check if single reference methods
                 are suitable
             fod (float): Fractional Occupation number weighted electron Density
         """
         super(CalculatedDataEntry, self).__init__()
-        self.conformer = conformer
         self.thermo_data = thermo_data
+        self.xyz_dict = xyz_dict
+        self.unscaled_freqs = unscaled_freqs
+        self.electronic_energy = electronic_energy
         self.t1_diagnostic = t1_diagnostic
         self.fod = fod
 
     def __repr__(self):
         return str(self.as_dict())
-
-    @property
-    def conformer(self):
-        return self._conformer
-
-    @conformer.setter
-    def conformer(self, value):
-        if value:
-            if isinstance(value, Conformer):
-                self._conformer = value
-            else:
-                raise ValueError('conformer for a CalculatedDataEntry object must be an rmgpy Conformer instance')
-        else:
-            self._conformer = None
 
     @property
     def thermo_data(self):
@@ -368,6 +380,32 @@ class CalculatedDataEntry(RMGObject):
                 self._thermo_data = value
             else:
                 raise ValueError('thermo_data for a CalculatedDataEntry object must be an rmgpy ThermoData object')
+
+    @property
+    def electronic_energy(self):
+        return self._electronic_energy
+
+    @electronic_energy.setter
+    def electronic_energy(self, value):
+        if value:
+            if isinstance(value, ScalarQuantity):
+                self._electronic_energy = value
+            else:
+                raise ValueError('electronic_energy for a CalculatedDataEntry object must be an rmgpy ScalarQuantity '
+                                 'object')
+
+    @property
+    def unscaled_freqs(self):
+        return self._unscaled_freqs
+
+    @unscaled_freqs.setter
+    def unscaled_freqs(self, value):
+        if value:
+            if isinstance(value, ArrayQuantity):
+                self._unscaled_freqs = value
+            else:
+                raise ValueError('unscaled_freqs for a CalculatedDataEntry object must be an rmgpy ArrayQuantity '
+                                 'object')
 
 
 class ReferenceDatabase(object):
