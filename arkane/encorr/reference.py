@@ -32,6 +32,7 @@
 This module defines the ReferenceSpecies class, which are used in isodesmic reaction calculations
 """
 
+import glob
 import logging
 import os
 import string
@@ -713,11 +714,10 @@ def update_reference_db(path: str, model_chemistry: str = None, ref_paths: List[
         None
     """
     spcs_list = []
-    for f in os.listdir(path):
-        if any(file_extension in f.lower() for file_extension in ['.yml', '.yaml']):
-            spc = ArkaneSpecies.__new__(ArkaneSpecies)
-            spc.load_yaml(path=os.path.join(path, f))
-            spcs_list.append(spc)
+    for f in glob.iglob(os.path.join(path, '*.[yY]*[mM][lL]')):
+        spc = ArkaneSpecies.__new__(ArkaneSpecies)
+        spc.load_yaml(path=os.path.join(path, f))
+        spcs_list.append(spc)
 
     database = ReferenceDatabase()
     database.load(ref_paths)
