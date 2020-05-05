@@ -92,8 +92,7 @@ class TestReferenceSpecies(unittest.TestCase):
         """
         Test that the example ReferenceSpecies YAML file can be loaded
         """
-        ref_spcs = ReferenceSpecies.__new__(ReferenceSpecies)
-        ref_spcs.load_yaml(os.path.join(SPECIES_DIR, 'reference_species_example.yml'))
+        ref_spcs = ReferenceSpecies(yaml_file=os.path.join(SPECIES_DIR, 'reference_species_example.yml'))
 
         self.assertEqual(ref_spcs.smiles, 'C#C[CH2]')
         self.assertEqual(ref_spcs.label, 'example_reference_species')
@@ -108,9 +107,8 @@ class TestReferenceSpecies(unittest.TestCase):
         self.assertEqual(ref_spcs.label, label)
         ref_spcs.save_yaml(path=SPECIES_DIR)
 
-        loaded_ref = ReferenceSpecies.__new__(ReferenceSpecies)
         load_path = os.path.join(SPECIES_DIR, f'{label}.yml')
-        loaded_ref.load_yaml(path=load_path)
+        loaded_ref = ReferenceSpecies(yaml_file=load_path)
 
         self.assertEqual(loaded_ref.smiles, 'CC')
 

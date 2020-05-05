@@ -64,7 +64,7 @@ class ReferenceSpecies(ArkaneSpecies):
 
     def __init__(self, species=None, smiles=None, adjacency_list=None, inchi=None, reference_data=None,
                  calculated_data=None, preferred_reference=None, index=None, label=None, cas_number=None,
-                 symmetry_number=None, default_xyz_chemistry=None, **kwargs):
+                 symmetry_number=None, default_xyz_chemistry=None, yaml_file=None, **kwargs):
         """
         One of the following must be provided: species, smiles, adjacency_list, inchi.
 
@@ -84,9 +84,14 @@ class ReferenceSpecies(ArkaneSpecies):
                 calculated by RMG)
             default_xyz_chemistry (str): The model chemistry that should be used to get the default XYZ coordinates for
                 this species.
+            yaml_file (str): If specified the reference species will be instantiated from the yaml file path given
             **kwargs: Arguments passed to the parent ArkaneSpecies class when loading from a YAML file. Not intended for
                 user input
         """
+        # Check if we need to load from a file first
+        if yaml_file is not None:
+            self.load_yaml(path=yaml_file)
+            return  # The rest of __init__ will get called from ``load_yaml``
 
         if species is None:
             if adjacency_list:
@@ -517,8 +522,7 @@ class ReferenceDatabase(object):
             for spcs in spcs_files:
                 if '.yml' not in spcs:
                     continue
-                ref_spcs = ReferenceSpecies.__new__(ReferenceSpecies)
-                ref_spcs.load_yaml(os.path.join(path, spcs))
+                ref_spcs = ReferenceSpecies(yaml_file=os.path.join(path, spcs))
 
                 if ignore_incomplete:
                     if (len(ref_spcs.calculated_data) == 0) or (len(ref_spcs.reference_data) == 0):
