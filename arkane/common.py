@@ -107,9 +107,16 @@ class ArkaneSpecies(RMGObject):
                  chemkin_thermo_string='', smiles=None, adjacency_list=None, inchi=None, inchi_key=None, xyz=None,
                  molecular_weight=None, symmetry_number=None, transport_data=None, energy_transfer_model=None,
                  thermo=None, thermo_data=None, label=None, datetime=None, RMG_version=None, reactants=None,
-                 products=None, reaction_label=None, is_ts=None, charge=None, formula=None, multiplicity=None):
+                 products=None, reaction_label=None, is_ts=None, charge=None, formula=None, multiplicity=None,
+                 yaml_file=None, pdep=False):
         # reactants/products/reaction_label need to be in the init() to avoid error when loading a TS YAML file,
         # but we don't use them
+
+        # Check if we need to load from a file first
+        if yaml_file is not None:
+            self.load_yaml(path=yaml_file, label=label, pdep=pdep)
+            return  # The rest of __init__ will get called from ``load_yaml``
+
         super(ArkaneSpecies, self).__init__()
         if species is None and conformer is None:
             # Expecting to get a species or a TS when generating the object within Arkane,
