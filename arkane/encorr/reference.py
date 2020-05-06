@@ -125,6 +125,9 @@ class ReferenceSpecies(ArkaneSpecies):
         except (AtomTypeError, ValueError):  # Move on for now
             pass
 
+        # If given, set the smiles string, as sometimes the translator gets this wrong
+        self.smiles = smiles or self.smiles
+
     def __repr__(self):
         if self.index:
             label = f'{self.smiles}({self.index})'
